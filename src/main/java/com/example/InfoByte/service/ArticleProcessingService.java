@@ -1,8 +1,10 @@
 package com.example.InfoByte.service;
 
 import com.example.InfoByte.model.Article;
+import com.example.InfoByte.model.ArticleStats; // Import ArticleStats
 import com.example.InfoByte.repository.ArticleRepository;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime; // Import LocalDateTime
 import java.util.List;
 
 @Service
@@ -18,7 +20,9 @@ public class ArticleProcessingService {
 
     public Article processAndSaveArticle(String title, String content, String sourceUrl, String internalCategoryName) {
         String summary = aiService.summarize(content);
-        // FIXED: Changed 'aiDervice' to 'aiService'
+        
+        // --- FIX ---
+        // Changed 'aiDervice' to 'aiService'
         List<Double> embedding = aiService.embed(content);
 
         Article article = new Article();
@@ -28,6 +32,11 @@ public class ArticleProcessingService {
         article.setSummary(summary);
         article.setCategory(internalCategoryName);
         article.setEmbedding(embedding);
+
+        // --- NEW ---
+        // Initialize new fields
+        article.setCreatedAt(LocalDateTime.now());
+        article.setStats(new ArticleStats()); // Initialize the stats
 
         return articleRepository.save(article);
     }
