@@ -1,68 +1,64 @@
 package com.example.InfoByte.service;
 
+import com.example.InfoByte.config.AppConstants;
+// ✅ CORRECT imports for Spring AI 1.0.0-M4
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.embedding.EmbeddingClient;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
+import java.util.stream.IntStream;
+import java.util.stream.Collectors;
 
 @Service
-
 public class AIService {
-    private final ChatClient chatClient;
-    private final EmbeddingClient embeddingClient;
 
-    // Spring AI automatically injects the configured Gemini clients
-    // because we added the dependency and API key.
-    public AIService(ChatClient chatClient, EmbeddingClient embeddingClient) {
-        this.chatClient = chatClient;
-        this.embeddingClient = embeddingClient;
+    private final ChatClient chatClient;
+    private final EmbeddingModel embeddingModel;
+
+    // ✅ Inject ChatClient.Builder and EmbeddingModel
+    public AIService(ChatClient.Builder chatClientBuilder, EmbeddingModel embeddingModel) {
+        this.chatClient = chatClientBuilder.build();
+        this.embeddingModel = embeddingModel;
     }
 
-    /**
-     * Generates a concise summary for a given article.
-     * This is for the main feed.
-     */
     public String summarize(String articleContent) {
-        // This is a simple "zero-shot" prompt.
         String promptText = """
                 Summarize the following article into 3-4 concise sentences 
                 for a news feed application.
-                
-                ARTICLE:
-                %s
-                
+                ARTICLE: %s
                 SUMMARY:
                 """.formatted(articleContent);
-
-        return chatClient.call(new Prompt(promptText)).getResult().getOutput().getContent();
+        return chatClient.prompt()
+                .user(promptText)
+                .call()
+                .content();
     }
 
-    /**
-     * Classifies an article into a predefined category.
-     * This is for personalizing the feed.
-     */
     public String classify(String articleContent) {
+        String categories = String.join(", ", AppConstants.CLASSIFIER_CATEGORIES);
         String promptText = """
                 Classify this article into ONE of the following categories: 
-                Technology, Finance, Sports, Medicine, Science, WorldNews.
+                %s.
                 Return only the single category name and nothing else.
-                
-                ARTICLE:
-                %s
-                
+                ARTICLE: %s
                 CATEGORY:
-                """.formatted(articleContent);
-
-        return chatClient.call(new Prompt(promptText)).getResult().getOutput().getContent();
+                """.formatted(categories, articleContent);
+        return chatClient.prompt()
+                .user(promptText)
+                .call()
+                .content();
     }
 
-    /**
-     * Creates a vector embedding for a given text.
-     * This is for the RAG chatbot (Phase 3).
-     */
     public List<Double> embed(String text) {
-        return embeddingClient.embed(text);
+        // ✅ FIXED: Convert float[] to List<Double>
+        EmbeddingResponse response = embeddingModel.embedForResponse(List.of(text));
+        float[] embedding = response.getResults().get(0).getOutput();
+        
+        // Convert float[] to List<Double>
+        return IntStream.range(0, embedding.length)
+                .mapToDouble(i -> (double) embedding[i])
+                .boxed()
+                .collect(Collectors.toList());
     }
 }
