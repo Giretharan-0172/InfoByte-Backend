@@ -3,6 +3,8 @@ package com.example.InfoByte.service;
 import com.example.InfoByte.model.Article;
 import com.example.InfoByte.model.ArticleStats; // Import ArticleStats
 import com.example.InfoByte.repository.ArticleRepository;
+import com.example.InfoByte.service.NotificationService;
+
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime; // Import LocalDateTime
 import java.util.List;
@@ -41,10 +43,13 @@ public class ArticleProcessingService {
         article.setCreatedAt(LocalDateTime.now());
         article.setStats(new ArticleStats()); // Initialize the stats
 
-         notificationService.createNotificationForCategory(
+        Article saved = articleRepository.save(article);
+        
+        // ✅ CREATE NOTIFICATIONS
+        notificationService.createNotificationForCategory(
             internalCategoryName, title, saved.getId()
         );
-
-        return articleRepository.save(article);
+        
+        return saved;
     }
 }

@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
-
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -15,6 +14,18 @@ export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   updateInterests: (userId, interests) => 
     api.put(`/auth/${userId}/interests`, { interests }),
+};
+
+// Notification API
+export const notificationAPI = {
+  getNotifications: (userId, page = 0, size = 20) =>
+    api.get(`/notifications/${userId}?page=${page}&size=${size}`),
+  
+  markAsRead: (notificationId) =>
+    api.put(`/notifications/${notificationId}/read`),
+  
+  markAllAsRead: (userId) =>
+    api.put(`/notifications/user/${userId}/read-all`),
 };
 
 // Feed API
