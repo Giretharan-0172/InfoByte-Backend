@@ -1,35 +1,52 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Sidebar from './components/layout/Sidebar';
+import RightSidebar from './components/layout/RightSidebar';
+import HomePage from './pages/HomePage';
+import ExplorePage from './pages/ExplorePage';
+import NotificationsPage from './pages/NotificationsPage';
+import BookmarksPage from './pages/BookmarksPage';
+import FeedPage from './pages/FeedPage';
+import LoginForm from './components/auth/LoginForm';
 
-function App() {
-  const [count, setCount] = useState(0)
+function AppLayout() {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <LoginForm />;
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="flex h-screen bg-navy-900 text-white overflow-hidden">
+      <Sidebar />
+      
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-5xl mx-auto p-6">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/explore" element={<ExplorePage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/bookmarks" element={<BookmarksPage />} />
+            <Route path="/feed" element={<FeedPage />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </div>
+      </main>
+
+      <RightSidebar />
+    </div>
+  );
 }
 
-export default App
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppLayout />
+      </Router>
+    </AuthProvider>
+  );
+}
+
+export default App;

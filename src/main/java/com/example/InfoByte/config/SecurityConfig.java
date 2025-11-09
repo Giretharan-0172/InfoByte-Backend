@@ -25,6 +25,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/test/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/feed/**").permitAll()
+                .requestMatchers("/api/interactions/**").permitAll()  // ADD THIS LINE
+                .requestMatchers("/api/debug/**").permitAll()
                 .anyRequest().authenticated()
             );
 

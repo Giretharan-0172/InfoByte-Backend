@@ -12,10 +12,13 @@ public class ArticleProcessingService {
 
     private final AIService aiService;
     private final ArticleRepository articleRepository;
+    private final NotificationService notificationService; // ADD THIS
 
-    public ArticleProcessingService(AIService aiService, ArticleRepository articleRepository) {
+
+    public ArticleProcessingService(AIService aiService, ArticleRepository articleRepository,NotificationService notificationService) {
         this.aiService = aiService;
         this.articleRepository = articleRepository;
+        this.notificationService = notificationService;
     }
 
     public Article processAndSaveArticle(String title, String content, String sourceUrl, String internalCategoryName) {
@@ -37,6 +40,10 @@ public class ArticleProcessingService {
         // Initialize new fields
         article.setCreatedAt(LocalDateTime.now());
         article.setStats(new ArticleStats()); // Initialize the stats
+
+         notificationService.createNotificationForCategory(
+            internalCategoryName, title, saved.getId()
+        );
 
         return articleRepository.save(article);
     }
