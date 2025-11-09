@@ -5,9 +5,7 @@ const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };
 
@@ -16,11 +14,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check localStorage for existing user
     const savedUser = localStorage.getItem('infobyte_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    if (savedUser) setUser(JSON.parse(savedUser));
     setLoading(false);
   }, []);
 
@@ -46,14 +41,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateInterests = async (interests) => {
-    const response = await authAPI.updateInterests(user.userId, interests);
+    await authAPI.updateInterests(user.userId, interests);
     const updatedUser = { ...user, interests };
     setUser(updatedUser);
     localStorage.setItem('infobyte_user', JSON.stringify(updatedUser));
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen bg-navy-900 text-white">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen bg-navy-900">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-accent-blue"></div>
+      </div>
+    );
   }
 
   return (

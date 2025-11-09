@@ -31,4 +31,4 @@ export const useInfiniteScroll = (fetchFunction) => {
   };
 
   return { articles, loadMore, hasMore, loading, reset };
-};             
+};
