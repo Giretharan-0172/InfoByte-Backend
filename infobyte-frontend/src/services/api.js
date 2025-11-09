@@ -1,7 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-const api = axios.create({
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  'https://orange-rotary-phone-69wx6qpqvjqx25gq-8080.app.github.dev/api';
+
+  const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
