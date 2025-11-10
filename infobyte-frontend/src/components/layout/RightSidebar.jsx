@@ -15,18 +15,21 @@ export default function RightSidebar() {
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [showInterestsModal, setShowInterestsModal] = useState(false);
   const [tempInterests, setTempInterests] = useState([]);
+  const [availableCategories, setAvailableCategories] = useState([]);
 
+  // ✅ Get categories dynamically from user interests or default
   const CATEGORIES = ['Technology', 'Business', 'Sports', 'Medicine', 'Science', 'WorldNews'];
-  const FEED_CATEGORIES = [
-    { name: 'AI', category: 'Technology' },
-    { name: 'GEO POLITICS', category: 'WorldNews' },
-    { name: 'Sports', category: 'Sports' }
-  ];
 
   useEffect(() => {
-    loadFeedData();
+    loadAvailableCategories();
     loadTrending();
   }, []);
+
+  useEffect(() => {
+    if (availableCategories.length > 0) {
+      loadFeedData();
+    }
+  }, [availableCategories]);
 
   useEffect(() => {
     if (user?.interests) {
@@ -34,15 +37,22 @@ export default function RightSidebar() {
     }
   }, [user]);
 
+  // ✅ Load categories dynamically (in real app, fetch from backend)
+  const loadAvailableCategories = () => {
+    // For now, use user's interests or top 3 categories
+    const topCategories = user?.interests?.slice(0, 3) || ['Technology', 'WorldNews', 'Sports'];
+    setAvailableCategories(topCategories);
+  };
+
   const loadFeedData = async () => {
     const data = {};
-    for (const item of FEED_CATEGORIES) {
+    for (const category of availableCategories) {
       try {
-        const response = await feedAPI.getByCategory(user?.userId || 'guest', item.category, 0, 3);
-        data[item.name] = response.data.articles || [];
+        const response = await feedAPI.getByCategory(user?.userId || 'guest', category, 0, 3);
+        data[category] = response.data.articles || [];
       } catch (error) {
-        console.error(`Error loading ${item.name}:`, error);
-        data[item.name] = [];
+        console.error(`Error loading ${category}:`, error);
+        data[category] = [];
       }
     }
     setFeedData(data);
@@ -72,6 +82,11 @@ export default function RightSidebar() {
     }
   };
 
+  // ✅ Redirect to Feed page filtered by category
+  const handleCategoryClick = (category) => {
+    navigate('/feed', { state: { selectedCategory: category } });
+  };
+
   const handleInterestToggle = (interest) => {
     setTempInterests(prev => 
       prev.includes(interest) 
@@ -84,6 +99,8 @@ export default function RightSidebar() {
     try {
       await updateInterests(tempInterests);
       setShowInterestsModal(false);
+      // Reload categories based on new interests
+      loadAvailableCategories();
     } catch (error) {
       console.error('Error updating interests:', error);
     }
@@ -92,6 +109,19 @@ export default function RightSidebar() {
   const truncateTitle = (title, maxLength = 30) => {
     if (!title) return '';
     return title.length > maxLength ? title.substring(0, maxLength) + '...' : title;
+  };
+
+  // ✅ Get display name for category
+  const getCategoryDisplayName = (category) => {
+    const displayNames = {
+      'Technology': 'AI',
+      'WorldNews': 'GEO POLITICS',
+      'Sports': 'Sports',
+      'Business': 'Business',
+      'Science': 'Science',
+      'Medicine': 'Medicine'
+    };
+    return displayNames[category] || category;
   };
 
   return (
@@ -121,22 +151,40 @@ export default function RightSidebar() {
           </div>
         </div>
 
-        {/* FEED Categories */}
+        {/* FEED Categories - Dynamic */}
         <div className="mb-8">
-          <h3 className="text-lg font-bold mb-4">FEED</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold">FEED</h3>
+            <button
+              onClick={() => navigate('/feed')}
+              className="text-sm text-accent-blue hover:text-blue-400 transition-colors"
+            >
+              View All
+            </button>
+          </div>
           <div className="space-y-4">
-            {FEED_CATEGORIES.map(item => (
-              <div key={item.name} className="bg-navy-700 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">{item.name}</h4>
+            {availableCategories.map(category => (
+              <div key={category} className="bg-navy-700 rounded-lg p-4">
+                <h4 
+                  className="font-semibold mb-2 cursor-pointer hover:text-accent-blue transition-colors"
+                  onClick={() => handleCategoryClick(category)}
+                >
+                  {getCategoryDisplayName(category)}
+                </h4>
                 <ul className="space-y-2 text-sm text-gray-400">
-                  {feedData[item.name]?.length > 0 ? (
-                    feedData[item.name].map((article, idx) => (
+                  {feedData[category]?.length > 0 ? (
+                    feedData[category].map((article) => (
                       <li 
                         key={article.id}
                         onClick={() => handleArticleClick(article.id)}
-                        className="hover:text-white cursor-pointer transition-colors"
+                        className="hover:text-white cursor-pointer transition-colors group relative"
+                        title={article.title} // ✅ Full title on hover
                       >
-                        • {truncateTitle(article.title)}
+                        <span className="block">• {truncateTitle(article.title)}</span>
+                        {/* ✅ Tooltip for full title */}
+                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 bg-navy-900 border border-gray-600 rounded-lg p-2 text-xs text-white shadow-lg max-w-xs whitespace-normal">
+                          {article.title}
+                        </div>
                       </li>
                     ))
                   ) : (
@@ -162,10 +210,15 @@ export default function RightSidebar() {
               <div
                 key={article.id}
                 onClick={() => handleTrendingClick(i)}
-                className="flex items-center gap-2 text-sm text-gray-400 hover:text-white cursor-pointer transition-colors"
+                className="flex items-center gap-2 text-sm text-gray-400 hover:text-white cursor-pointer transition-colors group relative"
+                title={article.title} // ✅ Full title on hover
               >
                 <span className="text-green-500 font-bold">#{i + 1}</span>
-                <span>{truncateTitle(article.title, 35)}</span>
+                <span className="flex-1">{truncateTitle(article.title, 35)}</span>
+                {/* ✅ Tooltip for full title */}
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 bg-navy-900 border border-gray-600 rounded-lg p-2 text-xs text-white shadow-lg max-w-xs whitespace-normal">
+                  {article.title}
+                </div>
               </div>
             ))}
           </div>

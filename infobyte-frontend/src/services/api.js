@@ -4,7 +4,7 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   'https://orange-rotary-phone-69wx6qpqvjqx25gq-8080.app.github.dev/api';
 
-  const api = axios.create({
+const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -77,6 +77,15 @@ export const interactionAPI = {
   
   getReadHistory: (userId) =>
     api.get(`/interactions/${userId}/history`),
+};
+
+// ✅ Category API (NEW)
+export const categoryAPI = {
+  getAvailableCategories: () =>
+    api.get('/categories'),
+  
+  getCategoryStats: () =>
+    api.get('/categories/stats'),
 };
 
 // Test/Debug API

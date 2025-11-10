@@ -1,10 +1,11 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { Home, Compass, Bell, Bookmark, Newspaper, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
@@ -43,9 +44,12 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* User Profile */}
+      {/* User Profile - Clickable */}
       <div className="p-4 border-t border-gray-800">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-navy-700">
+        <div 
+          onClick={() => navigate('/profile')}
+          className="flex items-center gap-3 p-3 rounded-lg bg-navy-700 hover:bg-navy-600 transition-colors cursor-pointer"
+        >
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center text-lg font-bold">
             {user?.name?.[0] || 'U'}
           </div>
@@ -54,7 +58,10 @@ export default function Sidebar() {
             <p className="text-xs text-gray-400 truncate">{user?.email}</p>
           </div>
           <button
-            onClick={logout}
+            onClick={(e) => {
+              e.stopPropagation();
+              logout();
+            }}
             className="text-gray-400 hover:text-red-400 transition-colors"
             title="Logout"
           >

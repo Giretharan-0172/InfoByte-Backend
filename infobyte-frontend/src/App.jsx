@@ -8,6 +8,7 @@ import ExplorePage from './pages/ExplorePage';
 import NotificationsPage from './pages/NotificationsPage';
 import BookmarksPage from './pages/BookmarksPage';
 import FeedPage from './pages/FeedPage';
+import ProfilePage from './pages/ProfilePage'; // ✅ NEW
 import LoginForm from './components/auth/LoginForm';
 
 function AppLayout() {
@@ -31,6 +32,7 @@ function AppLayout() {
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/bookmarks" element={<BookmarksPage />} />
             <Route path="/feed" element={<FeedPage />} />
+            <Route path="/profile" element={<ProfilePage />} /> {/* ✅ NEW */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

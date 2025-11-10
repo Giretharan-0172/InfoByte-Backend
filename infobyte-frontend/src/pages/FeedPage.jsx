@@ -1,6 +1,6 @@
-// ===== FeedPage.jsx =====
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { feedAPI } from '../services/api';
 import CategoryFilter from '../components/feed/CategoryFilter';
 import ArticleCard from '../components/feed/ArticleCard';
@@ -9,10 +9,18 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 
 export default function FeedPage() {
   const { user } = useAuth();
+  const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [articles, setArticles] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // ✅ Handle category from navigation state (when coming from sidebar)
+  useEffect(() => {
+    if (location.state?.selectedCategory) {
+      setSelectedCategory(location.state.selectedCategory);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     loadArticles();
