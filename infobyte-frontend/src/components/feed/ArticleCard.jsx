@@ -96,7 +96,7 @@ export default function ArticleCard({ article, isHero = false }) {
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-accent-blue hover:text-blue-400 text-sm transition-colors"
           >
-            Read original
+            Read more
             <ExternalLink size={16} />
           </a>
         </div>
