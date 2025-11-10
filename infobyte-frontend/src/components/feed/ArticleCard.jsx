@@ -5,7 +5,7 @@ import { useArticleInteraction } from '../../hooks/useArticleInteraction';
 import { categoryColors, formatTimeAgo, shareArticle } from '../../utils/helpers';
 import { interactionAPI } from '../../services/api';
 
-export default function ArticleCard({ article, isHero = false }) {
+export default function ArticleCard({ article, isHero = false, showImage = true, onArticleClick }) {
   const { user } = useAuth();
   const { liked, bookmarked, toggleLike, toggleBookmark } = useArticleInteraction(article.id, user?.userId);
   const startTimeRef = useRef(Date.now());
@@ -23,15 +23,28 @@ export default function ArticleCard({ article, isHero = false }) {
     await shareArticle(article, user.userId);
   };
 
+  const handleCardClick = (e) => {
+    // Don't trigger if clicking on interactive elements
+    if (e.target.closest('button') || e.target.closest('a')) return;
+    if (onArticleClick) onArticleClick(article);
+  };
+
   return (
-    <div className={`bg-navy-800 rounded-xl overflow-hidden border border-gray-800 hover:border-accent-blue transition-all ${
-      isHero ? 'col-span-2' : ''
-    }`}>
-      {/* Hero Image */}
-      {isHero && (
-        <div className="h-80 bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900 flex items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-black/30"></div>
-          <div className="relative z-10 text-6xl">🚀</div>
+    <div 
+      onClick={handleCardClick}
+      className={`bg-navy-800 rounded-xl overflow-hidden border border-gray-800 hover:border-accent-blue transition-all cursor-pointer ${
+        isHero ? 'col-span-2' : ''
+      }`}
+    >
+      {/* Hero/Article Image */}
+      {showImage && article.imageUrl && (
+        <div className={`${isHero ? 'h-80' : 'h-48'} overflow-hidden`}>
+          <img 
+            src={article.imageUrl} 
+            alt={article.title}
+            className="w-full h-full object-cover"
+            onError={(e) => e.target.parentElement.style.display = 'none'}
+          />
         </div>
       )}
 
@@ -48,7 +61,7 @@ export default function ArticleCard({ article, isHero = false }) {
         </div>
 
         {/* Title */}
-        <h3 className={`font-bold mb-3 hover:text-accent-blue transition-colors cursor-pointer ${
+        <h3 className={`font-bold mb-3 hover:text-accent-blue transition-colors ${
           isHero ? 'text-3xl' : 'text-xl'
         }`}>
           {article.title}

@@ -5,13 +5,12 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-// ✅ FIX: Import the correct 'Direction' class
-import org.springframework.data.mongodb.core.index.IndexDirection; 
+import org.springframework.data.mongodb.core.index.IndexDirection;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data // ✅ FIX: Add @Data for getters, setters, etc.
+@Data
 @Document(collection = "articles")
 public class Article {
     @Id
@@ -20,20 +19,22 @@ public class Article {
     private String originalContent;
     private String sourceUrl;
     
+    // ✅ ADD THIS FIELD
+    private String imageUrl; // Article thumbnail/header image
+    
     @Indexed
     private String category;
     
     private String summary;
     private List<Double> embedding;
 
-    // ✅ FIX: Add fields required by EnhancedFeedService and InteractionService
-    @Indexed(direction = IndexDirection.DESCENDING) // Use IndexDirection
+    @Indexed(direction = IndexDirection.DESCENDING)
     @CreatedDate
     private LocalDateTime createdAt;
 
-    private ArticleStats stats; // Add the stats object
+    private ArticleStats stats;
 
     public Article() {
-        this.stats = new ArticleStats(); // Initialize stats for new articles
+        this.stats = new ArticleStats();
     }
 }

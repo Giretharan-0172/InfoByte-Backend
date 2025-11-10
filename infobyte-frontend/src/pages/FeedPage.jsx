@@ -1,14 +1,17 @@
+// ===== FeedPage.jsx =====
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { feedAPI } from '../services/api';
 import CategoryFilter from '../components/feed/CategoryFilter';
 import ArticleCard from '../components/feed/ArticleCard';
+import ArticleModal from '../components/common/ArticleModal';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 export default function FeedPage() {
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [articles, setArticles] = useState([]);
+  const [selectedArticle, setSelectedArticle] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,26 +33,40 @@ export default function FeedPage() {
   };
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6">All Categories</h1>
+    <>
+      <div>
+        <h1 className="text-3xl font-bold mb-6">All Categories</h1>
 
-      <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
+        <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
 
-      {loading ? (
-        <LoadingSpinner />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {articles.map(article => (
-            <ArticleCard key={article.id} article={article} />
-          ))}
-        </div>
+        {loading ? (
+          <LoadingSpinner />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {articles.map(article => (
+              <ArticleCard 
+                key={article.id} 
+                article={article}
+                showImage={false}
+                onArticleClick={setSelectedArticle}
+              />
+            ))}
+          </div>
+        )}
+
+        {articles.length === 0 && !loading && (
+          <div className="text-center py-12 text-gray-400">
+            No articles found in this category
+          </div>
+        )}
+      </div>
+
+      {selectedArticle && (
+        <ArticleModal 
+          article={selectedArticle} 
+          onClose={() => setSelectedArticle(null)} 
+        />
       )}
-
-      {articles.length === 0 && !loading && (
-        <div className="text-center py-12 text-gray-400">
-          No articles found in this category
-        </div>
-      )}
-    </div>
+    </>
   );
 }

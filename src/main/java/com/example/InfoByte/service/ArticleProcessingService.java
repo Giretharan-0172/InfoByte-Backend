@@ -1,12 +1,12 @@
 package com.example.InfoByte.service;
 
 import com.example.InfoByte.model.Article;
-import com.example.InfoByte.model.ArticleStats; // Import ArticleStats
+import com.example.InfoByte.model.ArticleStats;
 import com.example.InfoByte.repository.ArticleRepository;
 import com.example.InfoByte.service.NotificationService;
 
 import org.springframework.stereotype.Service;
-import java.time.LocalDateTime; // Import LocalDateTime
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -14,20 +14,17 @@ public class ArticleProcessingService {
 
     private final AIService aiService;
     private final ArticleRepository articleRepository;
-    private final NotificationService notificationService; // ADD THIS
+    private final NotificationService notificationService;
 
-
-    public ArticleProcessingService(AIService aiService, ArticleRepository articleRepository,NotificationService notificationService) {
+    public ArticleProcessingService(AIService aiService, ArticleRepository articleRepository, NotificationService notificationService) {
         this.aiService = aiService;
         this.articleRepository = articleRepository;
         this.notificationService = notificationService;
     }
 
-    public Article processAndSaveArticle(String title, String content, String sourceUrl, String internalCategoryName) {
+    // ✅ UPDATED METHOD - Added imageUrl parameter
+    public Article processAndSaveArticle(String title, String content, String sourceUrl, String internalCategoryName, String imageUrl) {
         String summary = aiService.summarize(content);
-        
-        // --- FIX ---
-        // Changed 'aiDervice' to 'aiService'
         List<Double> embedding = aiService.embed(content);
 
         Article article = new Article();
@@ -37,15 +34,17 @@ public class ArticleProcessingService {
         article.setSummary(summary);
         article.setCategory(internalCategoryName);
         article.setEmbedding(embedding);
+        
+        // ✅ SET IMAGE URL
+        article.setImageUrl(imageUrl);
 
-        // --- NEW ---
         // Initialize new fields
         article.setCreatedAt(LocalDateTime.now());
-        article.setStats(new ArticleStats()); // Initialize the stats
+        article.setStats(new ArticleStats());
 
         Article saved = articleRepository.save(article);
         
-        // ✅ CREATE NOTIFICATIONS
+        // Create notifications
         notificationService.createNotificationForCategory(
             internalCategoryName, title, saved.getId()
         );

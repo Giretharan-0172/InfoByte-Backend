@@ -1,4 +1,5 @@
 package com.example.InfoByte.service;
+
 import com.example.InfoByte.config.AppConstants;
 import com.example.InfoByte.model.ApiArticle;
 import com.example.InfoByte.model.NewsApiResponse;
@@ -40,17 +41,28 @@ public class ContentAggregationService {
     private void fetchNewsForCategory(String internalCategoryName, String apiQueryName) {
         String url = NEWS_API_BASE_URL + apiKey + "&category=" + apiQueryName;
         NewsApiResponse response = restTemplate.getForObject(url, NewsApiResponse.class);
+        
         if (response != null && response.getArticles() != null) {
             System.out.println("Fetched " + response.getArticles().size() + " articles for " + internalCategoryName);
+            
             for (ApiArticle apiArticle : response.getArticles()) {
-                if (apiArticle.getTitle() != null && (apiArticle.getDescription() != null || apiArticle.getContent() != null)) {
-                    String content = (apiArticle.getDescription() != null) ? apiArticle.getDescription() : apiArticle.getContent();
+                if (apiArticle.getTitle() != null && 
+                    (apiArticle.getDescription() != null || apiArticle.getContent() != null)) {
+                    
+                    String content = (apiArticle.getDescription() != null) 
+                        ? apiArticle.getDescription() 
+                        : apiArticle.getContent();
+                    
+                    // ✅ PASS IMAGE URL TO PROCESSING SERVICE
+                    String imageUrl = apiArticle.getUrlToImage(); // Get from API
+                    
                     try {
                         articleProcessingService.processAndSaveArticle(
-                                apiArticle.getTitle(),
-                                content,
-                                apiArticle.getUrl(),
-                                internalCategoryName
+                            apiArticle.getTitle(),
+                            content,
+                            apiArticle.getUrl(),
+                            internalCategoryName,
+                            imageUrl  // ✅ ADDED PARAMETER
                         );
                     } catch (Exception e) {
                         System.err.println("Failed to process article: " + apiArticle.getTitle() + " - " + e.getMessage());
