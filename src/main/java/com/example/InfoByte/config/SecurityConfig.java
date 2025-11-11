@@ -24,8 +24,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/test/**").permitAll()
                 // ✅ CHANGED: Made auth endpoints more specific
-                .requestMatchers("/api/auth/register").permitAll()
-                .requestMatchers("/api/auth/login").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
                 // Other /api/auth/** routes (like profile/password) will be authenticated
                 .requestMatchers("/api/feed/**").permitAll()
                 .requestMatchers("/api/interactions/**").permitAll()
