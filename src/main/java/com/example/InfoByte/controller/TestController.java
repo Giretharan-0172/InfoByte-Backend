@@ -1,4 +1,5 @@
 package com.example.InfoByte.controller;
+
 import com.example.InfoByte.service.ContentAggregationService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,10 +17,12 @@ public class TestController {
 
     @GetMapping("/fetch-news")
     public String triggerNewsFetch() {
-        System.out.println("Test endpoint hit. Starting news fetch in background...");
+        // This now only FETCHES and stores raw data.
+        // Processing happens automatically in the background every minute.
         new Thread(() -> {
-            contentAggregationService.fetchAndProcessAllNews();
+            contentAggregationService.fetchNewsFromApiManual();
         }).start();
-        return "OK! News fetch and processing job started in the background. Check your server logs and MongoDB database.";
+        
+        return "Fetch started! Articles are being saved to DB. The AI Processor will summarize 15 of them every minute automatically.";
     }
 }

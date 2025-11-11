@@ -1,7 +1,6 @@
 package com.example.InfoByte.service;
 
 import com.example.InfoByte.config.AppConstants;
-// ✅ CORRECT imports for Spring AI 1.0.0-M4
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingResponse;
@@ -16,16 +15,16 @@ public class AIService {
     private final ChatClient chatClient;
     private final EmbeddingModel embeddingModel;
 
-    // ✅ Inject ChatClient.Builder and EmbeddingModel
     public AIService(ChatClient.Builder chatClientBuilder, EmbeddingModel embeddingModel) {
         this.chatClient = chatClientBuilder.build();
         this.embeddingModel = embeddingModel;
     }
 
     public String summarize(String articleContent) {
+        // ✅ UPDATED: Strict ~60 words limit
         String promptText = """
-                Summarize the following article into 3-4 concise sentences 
-                for a news feed application.
+                Summarize the following article into exactly 2-4 sentences (approx 60 words).
+                Focus on the main event and outcome. Do not use "This article talks about".
                 ARTICLE: %s
                 SUMMARY:
                 """.formatted(articleContent);
@@ -51,11 +50,9 @@ public class AIService {
     }
 
     public List<Double> embed(String text) {
-        // ✅ FIXED: Convert float[] to List<Double>
         EmbeddingResponse response = embeddingModel.embedForResponse(List.of(text));
         float[] embedding = response.getResults().get(0).getOutput();
         
-        // Convert float[] to List<Double>
         return IntStream.range(0, embedding.length)
                 .mapToDouble(i -> (double) embedding[i])
                 .boxed()

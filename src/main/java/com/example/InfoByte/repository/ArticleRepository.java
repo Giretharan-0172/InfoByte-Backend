@@ -9,7 +9,14 @@ import java.util.List;
 public interface ArticleRepository extends MongoRepository<Article, String> {
     Page<Article> findByCategoryIn(List<String> categories, Pageable pageable);
 
-    // ✅ FIX: Changed from TextCriteria to standard standard regex-like search
-    // This is much more robust for simple search queries
     Page<Article> findByTitleContainingIgnoreCaseOrSummaryContainingIgnoreCase(String title, String summary, Pageable pageable);
+
+    // ✅ NEW: Check for duplicates
+    boolean existsBySourceUrl(String sourceUrl);
+
+    // ✅ NEW: Get batch of unprocessed articles for the scheduler
+    List<Article> findTop15ByProcessedFalse();
+    
+    // Optional: count pending
+    long countByProcessedFalse();
 }
