@@ -76,7 +76,8 @@ export default function ExplorePage() {
                 <ArticleCard 
                   key={article.id} 
                   article={article}
-                  showImage={true}
+                  // ✅ UPDATED: Set to false to match FeedPage layout
+                  showImage={false} 
                   onArticleClick={setSelectedArticle}
                 />
               ))}

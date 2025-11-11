@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Heart, Bookmark, Share2, ExternalLink, Clock } from 'lucide-react';
+import { Heart, Bookmark, Share2, Clock } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useArticleInteraction } from '../../hooks/useArticleInteraction';
 import { categoryColors, formatTimeAgo, shareArticle } from '../../utils/helpers';
@@ -19,14 +19,24 @@ export default function ArticleCard({ article, isHero = false, showImage = true,
     };
   }, [article.id, user.userId]);
 
-  const handleShare = async () => {
+  const handleShare = async (e) => {
+    e.stopPropagation();
     await shareArticle(article, user.userId);
   };
 
   const handleCardClick = (e) => {
-    // Don't trigger if clicking on interactive elements
     if (e.target.closest('button') || e.target.closest('a')) return;
     if (onArticleClick) onArticleClick(article);
+  };
+
+  const handleLike = (e) => {
+    e.stopPropagation();
+    toggleLike();
+  };
+
+  const handleBookmark = (e) => {
+    e.stopPropagation();
+    toggleBookmark();
   };
 
   const hasImage = showImage && article.imageUrl;
@@ -34,106 +44,77 @@ export default function ArticleCard({ article, isHero = false, showImage = true,
   return (
     <div 
       onClick={handleCardClick}
-      className={`rounded-xl overflow-hidden transition-all cursor-pointer 
-        bg-navy-800/75 backdrop-blur-lg 
-        border border-gray-700/50 hover:border-accent-blue/75
-      `}
+      className="group relative bg-abyss-700 rounded-2xl border border-abyss-500 hover:border-cyber-500/50 transition-all cursor-pointer overflow-hidden"
     >
-      {/* ✅ NEW: Image Section with Overlay */}
-      {hasImage ? (
-        <div className="relative">
-          <img 
-            src={article.imageUrl} 
-            alt={article.title}
-            className="w-full h-80 object-cover"
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-          
-          {/* Content on top of Image */}
-          <div className="absolute bottom-0 left-0 p-6 text-white">
-            <div className="flex items-center gap-2 mb-3">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${categoryColors[article.category] || 'bg-gray-600'}`}>
-                {article.category}
-              </span>
-              <span className="text-xs text-gray-300 flex items-center gap-1">
-                <Clock size={12} />
-                {formatTimeAgo(article.createdAt)}
-              </span>
-            </div>
-            <h3 className="font-bold text-xl text-white">
-              {article.title}
-            </h3>
-          </div>
-        </div>
-      ) : null}
-
-      {/* ✅ NEW: Content Section (below image) */}
-      <div className="p-6">
-        {/* Title (only if no image) */}
-        {!hasImage && (
-          <>
-            <div className="flex items-center gap-2 mb-3">
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${categoryColors[article.category] || 'bg-gray-600'}`}>
-                {article.category}
-              </span>
-              <span className="text-xs text-gray-400 flex items-center gap-1">
-                <Clock size={12} />
-                {formatTimeAgo(article.createdAt)}
-              </span>
-            </div>
-            <h3 className={`font-bold mb-3 hover:text-accent-blue transition-colors text-xl`}>
-              {article.title}
-            </h3>
-          </>
-        )}
+      {/* Main Content Container - Block Layout */}
+      <div className="p-6 block relative after:content-[''] after:table after:clear-both">
         
-        {/* Summary */}
-        <p className="text-gray-400 mb-4 line-clamp-2">
-          {article.summary}
-        </p>
+        {/* Right Side - Image (Floated) */}
+        {/* Placed first in DOM to float correctly to the right */}
+        {hasImage && (
+          <div className="w-full md:w-72 h-48 mb-4 md:mb-0 md:ml-6 md:float-right rounded-xl overflow-hidden flex-shrink-0">
+            <img 
+              src={article.imageUrl} 
+              alt={article.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+            />
+          </div>
+        )}
 
-        {/* Actions */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        {/* Content Sections - Wraps around image */}
+        <div className="content-wrapper">
+          
+          {/* Category & Time */}
+          <div className="flex items-center gap-3 mb-3">
+            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${categoryColors[article.category] || 'bg-gray-600 text-white'}`}>
+              {article.category}
+            </span>
+            <span className="text-xs text-gray-500 flex items-center gap-1">
+              <Clock size={12} />
+              {formatTimeAgo(article.createdAt)}
+            </span>
+          </div>
+
+          {/* Title - Full text displayed */}
+          <h3 className="text-xl font-bold mb-3 text-white group-hover:text-cyber-500 transition-colors">
+            {article.title}
+          </h3>
+
+          {/* Summary - Full text displayed */}
+          <p className="text-gray-400 text-sm mb-4">
+            {article.summary}
+          </p>
+
+          {/* Actions at Bottom */}
+          <div className="flex items-center gap-4 pt-2">
             <button
-              onClick={toggleLike}
-              className={`flex items-center gap-2 transition-colors ${
-                liked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
+              onClick={handleLike}
+              className={`flex items-center gap-1.5 transition-colors ${
+                liked ? 'text-red-400' : 'text-gray-500 hover:text-red-400'
               }`}
             >
-              <Heart size={20} fill={liked ? 'currentColor' : 'none'} />
-              <span className="text-sm">{(article.stats?.likeCount || 0) + (liked ? 1 : 0)}</span>
+              <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
+              <span className="text-sm font-medium">{(article.stats?.likeCount || 0) + (liked ? 1 : 0)}</span>
             </button>
 
             <button
-              onClick={toggleBookmark}
-              className={`flex items-center gap-2 transition-colors ${
-                bookmarked ? 'text-accent-blue' : 'text-gray-400 hover:text-accent-blue'
+              onClick={handleBookmark}
+              className={`flex items-center gap-1.5 transition-colors ${
+                bookmarked ? 'text-cyber-500' : 'text-gray-500 hover:text-cyber-500'
               }`}
             >
-              <Bookmark size={20} fill={bookmarked ? 'currentColor' : 'none'} />
+              <Bookmark size={18} fill={bookmarked ? 'currentColor' : 'none'} />
             </button>
 
             <button
               onClick={handleShare}
-              className="flex items-center gap-2 text-gray-400 hover:text-green-500 transition-colors"
+              className="flex items-center gap-1.5 text-gray-500 hover:text-matrix-500 transition-colors"
             >
-              <Share2 size={20} />
-              <span className="text-sm">{article.stats?.shareCount || 0}</span>
+              <Share2 size={18} />
+              <span className="text-sm font-medium">{article.stats?.shareCount || 0}</span>
             </button>
           </div>
-
-          <a
-            href={article.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-accent-blue hover:text-blue-400 text-sm transition-colors"
-          >
-            Read more
-            <ExternalLink size={16} />
-          </a>
         </div>
       </div>
     </div>
