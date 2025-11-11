@@ -6,7 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.query.TextCriteria; // ✅ NEW
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -19,12 +18,7 @@ public class EnhancedFeedService {
         this.articleRepository = articleRepository;
     }
 
-    /**
-     * Get personalized feed based on user interests
-     * Sorted by newest first
-     */
     public Page<Article> getPersonalizedFeed(List<String> userInterests, Pageable pageable) {
-        // Add sorting by creation date (newest first)
         Pageable sortedPageable = PageRequest.of(
             pageable.getPageNumber(),
             pageable.getPageSize(),
@@ -33,22 +27,16 @@ public class EnhancedFeedService {
         return articleRepository.findByCategoryIn(userInterests, sortedPageable);
     }
     
-    // ✅ NEW: Get personalized feed sorted by engagement (for Explore page)
     public Page<Article> getPersonalizedTrendingFeed(List<String> userInterests, Pageable pageable) {
         Pageable sortedPageable = PageRequest.of(
             pageable.getPageNumber(),
             pageable.getPageSize(),
-            Sort.by(Sort.Direction.DESC, "stats.engagementScore") // Sort by trending
+            Sort.by(Sort.Direction.DESC, "stats.engagementScore")
         );
         return articleRepository.findByCategoryIn(userInterests, sortedPageable);
     }
 
-    /**
-     * Get trending articles (most engaging)
-     * For "Explore" or "Trending" tab
-     */
     public Page<Article> getTrendingArticles(Pageable pageable) {
-        // Sort by engagement score (highest first)
         Pageable sortedPageable = PageRequest.of(
             pageable.getPageNumber(),
             pageable.getPageSize(),
@@ -57,9 +45,6 @@ public class EnhancedFeedService {
         return articleRepository.findAll(sortedPageable);
     }
 
-    /**
-     * Get most popular articles (most liked)
-     */
     public Page<Article> getPopularArticles(Pageable pageable) {
         Pageable sortedPageable = PageRequest.of(
             pageable.getPageNumber(),
@@ -69,9 +54,6 @@ public class EnhancedFeedService {
         return articleRepository.findAll(sortedPageable);
     }
 
-    /**
-     * Get latest articles (all categories)
-     */
     public Page<Article> getLatestArticles(Pageable pageable) {
         Pageable sortedPageable = PageRequest.of(
             pageable.getPageNumber(),
@@ -81,9 +63,6 @@ public class EnhancedFeedService {
         return articleRepository.findAll(sortedPageable);
     }
 
-    /**
-     * Get feed by specific category
-     */
     public Page<Article> getFeedByCategory(String category, Pageable pageable) {
         Pageable sortedPageable = PageRequest.of(
             pageable.getPageNumber(),
@@ -93,20 +72,13 @@ public class EnhancedFeedService {
         return articleRepository.findByCategoryIn(List.of(category), sortedPageable);
     }
 
-    /**
-     * Get single article by ID
-     */
     public Article getArticleById(String articleId) {
         return articleRepository.findById(articleId)
             .orElseThrow(() -> new RuntimeException("Article not found"));
     }
     
-    // ✅ NEW: Search articles by text query
+    // ✅ FIX: Use the new repository method
     public Page<Article> searchArticles(String query, Pageable pageable) {
-        TextCriteria criteria = TextCriteria
-            .forDefaultLanguage()
-            .matchingAny(query);
-            
-        return articleRepository.findAllBy(criteria, pageable);
+        return articleRepository.findByTitleContainingIgnoreCaseOrSummaryContainingIgnoreCase(query, query, pageable);
     }
 }

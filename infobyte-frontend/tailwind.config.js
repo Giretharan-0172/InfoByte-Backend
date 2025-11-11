@@ -6,33 +6,31 @@ module.exports = {
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
-    // We are replacing the default color palette, not just extending it.
     colors: {
-      // First, import all default colors...
       ...colors,
       
-      // ...then, override the 'gray' palette with 'slate'.
-      // This is a powerful change: all existing 'text-gray-400', 'border-gray-700', etc.
-      // will now use the 'slate' color palette, giving an instant modern feel.
-      gray: colors.slate,
+      // 1. Text & Borders: Swapped to 'neutral' or 'stone' for a slight contrast
+      // This gives the text a softer, less harsh look against the dark background.
+      gray: colors.neutral,
 
-      // We replace the 'navy' palette with 'zinc'.
-      // This gives a more neutral, less-blue background.
+      // 2. Backgrounds: 'Zinc' provides that "Grey Black" / "Darker Black" look.
+      // zinc-950 is a very deep, rich black-grey.
       navy: {
-        900: colors.zinc[900], // #18181b
-        800: colors.zinc[800], // #27272a
-        700: colors.zinc[700], // #3f3f46
-        600: colors.zinc[600], // #52525b
+        900: '#09090b', // zinc-950 (Main Background - Darker Black)
+        800: '#18181b', // zinc-900 (Card/Sidebar Background - Grey Black)
+        700: '#27272a', // zinc-800 (Hover states)
+        600: '#3f3f46', // zinc-700 (Borders)
       },
 
-      // Your original accent colors are good, so we'll keep them.
+      // 3. Accents: Kept your vibrant colors but you can swap blue to 'white' or 'zinc-200' 
+      // for a monochrome "Apple/Vercel" look if preferred. 
+      // I'll keep the blue for now as it pops well on black.
       accent: {
-        blue: '#4f6bff',
-        purple: '#8b5cf6',
+        blue: '#3b82f6',   // Standard bright blue
+        purple: '#a855f7',
         pink: '#ec4899',
-      }
+      },
     },
-    // We keep your font choices in 'extend'
     extend: {
       fontFamily: {
         display: ['Playfair Display', 'serif'],

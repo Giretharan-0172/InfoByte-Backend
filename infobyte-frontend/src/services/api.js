@@ -9,6 +9,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // ✅ CRITICAL FIX: This sends the session cookie to the backend
+  withCredentials: true 
 });
 
 // Auth API
@@ -42,11 +44,9 @@ export const feedAPI = {
   getPersonalizedFeed: (userId, page = 0, size = 10) =>
     api.get(`/feed/${userId}?page=${page}&size=${size}`),
   
-  // ✅ NEW: Get personalized trending feed
   getPersonalizedTrending: (userId, page = 0, size = 20) =>
     api.get(`/feed/${userId}/trending?page=${page}&size=${size}`),
     
-  // ✅ NEW: Search articles
   search: (query, page = 0, size = 20) =>
     api.get(`/feed/search?query=${query}&page=${page}&size=${size}`),
   

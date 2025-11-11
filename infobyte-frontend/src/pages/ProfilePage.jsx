@@ -1,284 +1,298 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Lock, Heart, Save } from 'lucide-react';
+import { Edit2, Save, X, Lock, Tag, User, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/common/Button';
+import { categoryColors } from '../utils/helpers';
 
 const CATEGORIES = ['Technology', 'Business', 'Sports', 'Medicine', 'Science', 'WorldNews'];
 
 export default function ProfilePage() {
-  // ✅ CHANGED: Get new functions from context
-  const { user, updateInterests, updateProfile, changePassword } = useAuth();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-    interests: []
-  });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const { user, updateProfile, updateInterests, changePassword, logout } = useAuth();
+  
+  // Separate states for each section's editing mode
+  const [editName, setEditName] = useState(false);
+  const [editInterests, setEditInterests] = useState(false);
+  const [editPassword, setEditPassword] = useState(false);
+
+  // Form states
+  const [name, setName] = useState('');
+  const [interests, setInterests] = useState([]);
+  const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' });
+  
+  const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
-      setFormData({
-        name: user.name || '',
-        email: user.email || '',
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-        interests: user.interests || []
-      });
+      setName(user.name || '');
+      setInterests(user.interests || []);
     }
   }, [user]);
 
-  const handleInterestToggle = (category) => {
-    setFormData(prev => ({
-      ...prev,
-      interests: prev.interests.includes(category)
-        ? prev.interests.filter(i => i !== category)
-        : [...prev.interests, category]
-    }));
+  // Helper to handle success/error messages
+  const showMessage = (type, text) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
   };
 
-  // ✅ CHANGED: Updated profile handler to submit all changes
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
+  // --- Handlers ---
+
+  const handleNameSave = async () => {
     setLoading(true);
-
     try {
-      let successMessages = [];
-
-      // 1. Update Name if changed
-      if (formData.name !== user.name) {
-        await updateProfile(formData.name);
-        successMessages.push('Name updated');
-      }
-
-      // 2. Update Interests if changed
-      const interestsChanged = formData.interests.length !== user.interests.length ||
-        !formData.interests.every(interest => user.interests.includes(interest));
-
-      if (interestsChanged) {
-        if (formData.interests.length === 0) {
-          setError('Please select at least one interest');
-          setLoading(false);
-          return;
-        }
-        await updateInterests(formData.interests);
-        successMessages.push('Interests updated');
-      }
-
-      // 3. Update Password if new password is set
-      if (formData.newPassword) {
-        if (!formData.currentPassword) {
-          setError('Current password is required to set a new password');
-          setLoading(false);
-          return;
-        }
-        if (formData.newPassword !== formData.confirmPassword) {
-          setError('New passwords do not match');
-          setLoading(false);
-          return;
-        }
-        if (formData.newPassword.length < 6) {
-          setError('New password must be at least 6 characters');
-          setLoading(false);
-          return;
-        }
-        await changePassword(formData.currentPassword, formData.newPassword);
-        successMessages.push('Password updated');
-      }
-
-      if (successMessages.length === 0) {
-        setSuccess('No changes to save');
-      } else {
-        setSuccess(successMessages.join(' & ') + ' successfully!');
-      }
-
-      // Clear password fields
-      setFormData(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      }));
-
+      await updateProfile(name);
+      setEditName(false);
+      showMessage('success', 'Username updated successfully');
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to update profile');
+      showMessage('error', 'Failed to update name');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleInterestToggle = (category) => {
+    setInterests(prev => 
+      prev.includes(category) 
+        ? prev.filter(i => i !== category) 
+        : [...prev, category]
+    );
+  };
+
+  const handleInterestsSave = async () => {
+    setLoading(true);
+    try {
+      await updateInterests(interests);
+      setEditInterests(false);
+      showMessage('success', 'Interests updated successfully');
+    } catch (err) {
+      showMessage('error', 'Failed to update interests');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordSave = async () => {
+    if (passwords.new !== passwords.confirm) {
+      showMessage('error', 'New passwords do not match');
+      return;
+    }
+    if (passwords.new.length < 6) {
+      showMessage('error', 'Password must be at least 6 characters');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await changePassword(passwords.current, passwords.new);
+      setEditPassword(false);
+      setPasswords({ current: '', new: '', confirm: '' });
+      showMessage('success', 'Password changed successfully');
+    } catch (err) {
+      showMessage('error', err.response?.data?.error || 'Failed to change password');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Profile Settings</h1>
-        <p className="text-gray-400">Manage your account information and preferences</p>
-      </div>
-
-      {/* Profile Header */}
-      <div className="bg-navy-800 rounded-xl p-6 mb-6 border border-gray-700">
-        <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center text-3xl font-bold">
+    <div className="max-w-4xl mx-auto pt-8">
+      {/* Header Banner Area */}
+      <div className="relative bg-navy-800 rounded-t-2xl h-48 bg-gradient-to-r from-navy-800 to-navy-700">
+        <div className="absolute -bottom-12 left-8 flex items-end gap-6">
+          {/* Avatar */}
+          <div className="w-32 h-32 rounded-full bg-gray-500 border-4 border-navy-900 flex items-center justify-center text-4xl font-bold text-white shadow-lg">
             {user?.name?.[0]?.toUpperCase() || 'U'}
           </div>
-          <div>
-            <h2 className="text-2xl font-bold">{user?.name}</h2>
-            <p className="text-gray-400">{user?.email}</p>
+          
+          {/* Name & Handle */}
+          <div className="mb-2">
+            <h1 className="text-3xl font-bold text-white">{user?.name}</h1>
+            <p className="text-gray-400">@{user?.email?.split('@')[0]}</p>
           </div>
         </div>
       </div>
 
-      {/* Update Form */}
-      <form onSubmit={handleUpdateProfile} className="space-y-6">
-        {/* Personal Information */}
-        <div className="bg-navy-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <User size={20} className="text-accent-blue" />
-            Personal Information
-          </h3>
+      {/* Main Content Area */}
+      <div className="bg-navy-900 mt-16 px-8 pb-8">
+        
+        {/* Feedback Message */}
+        {message.text && (
+          <div className={`mb-6 p-4 rounded-lg border ${
+            message.type === 'success' ? 'bg-green-500/10 border-green-500 text-green-400' : 'bg-red-500/10 border-red-500 text-red-400'
+          }`}>
+            {message.text}
+          </div>
+        )}
 
-          {error && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500 rounded-lg text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-4 p-3 bg-green-500/10 border border-green-500 rounded-lg text-green-400 text-sm">
-              {success}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                // ✅ CHANGED: Enabled input
-                disabled={loading}
-                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors disabled:opacity-50"
-                placeholder="Your name"
-              />
-              {/* ✅ CHANGED: Updated help text */}
-              <p className="text-xs text-gray-500 mt-1">Update your display name</p>
+        <div className="grid gap-6">
+          
+          {/* 1. Username Section */}
+          <div className="bg-navy-800 rounded-2xl p-6 border border-gray-700">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-accent-blue/10 rounded-lg text-accent-blue">
+                  <User size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Username</h3>
+                  <p className="text-sm text-gray-400">Your display name across InfoByte</p>
+                </div>
+              </div>
+              {!editName && (
+                <button onClick={() => setEditName(true)} className="text-sm text-gray-400 hover:text-white flex items-center gap-1 bg-navy-700 px-3 py-1.5 rounded-full transition-colors">
+                  Edit <Edit2 size={14} />
+                </button>
+              )}
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 flex items-center gap-2">
-                <Mail size={16} />
-                Email
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                disabled
-                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="your@email.com"
-              />
-              <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+            {editName ? (
+              <div className="flex gap-3 animate-in fade-in slide-in-from-top-2">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="flex-1 px-4 py-2 bg-navy-900 border border-gray-600 rounded-lg focus:border-accent-blue outline-none"
+                />
+                <Button onClick={handleNameSave} disabled={loading} className="py-2">Save</Button>
+                <button onClick={() => setEditName(false)} className="px-4 py-2 bg-navy-700 rounded-lg hover:bg-navy-600">Cancel</button>
+              </div>
+            ) : (
+              <p className="text-xl font-medium pl-12">{user?.name}</p>
+            )}
+          </div>
+
+          {/* 2. Email Section (Read Only) */}
+          <div className="bg-navy-800 rounded-2xl p-6 border border-gray-700 opacity-75">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-purple-500/10 rounded-lg text-purple-400">
+                <span className="text-lg">@</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">Email Address</h3>
+                <p className="text-sm text-gray-400">Managed by InfoByte ID (Cannot be changed)</p>
+              </div>
+            </div>
+            <p className="text-xl font-medium pl-12">{user?.email}</p>
+          </div>
+
+          {/* 3. Password Section */}
+          <div className="bg-navy-800 rounded-2xl p-6 border border-gray-700">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-pink-500/10 rounded-lg text-pink-400">
+                  <Lock size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Password</h3>
+                  <p className="text-sm text-gray-400">Secure your account</p>
+                </div>
+              </div>
+              {!editPassword && (
+                <button onClick={() => setEditPassword(true)} className="text-sm text-gray-400 hover:text-white flex items-center gap-1 bg-navy-700 px-3 py-1.5 rounded-full transition-colors">
+                  Change <Edit2 size={14} />
+                </button>
+              )}
+            </div>
+
+            {editPassword ? (
+              <div className="space-y-3 pl-12 animate-in fade-in slide-in-from-top-2">
+                <input
+                  type="password"
+                  placeholder="Current Password"
+                  value={passwords.current}
+                  onChange={(e) => setPasswords({...passwords, current: e.target.value})}
+                  className="w-full px-4 py-2 bg-navy-900 border border-gray-600 rounded-lg focus:border-accent-blue outline-none"
+                />
+                <input
+                  type="password"
+                  placeholder="New Password"
+                  value={passwords.new}
+                  onChange={(e) => setPasswords({...passwords, new: e.target.value})}
+                  className="w-full px-4 py-2 bg-navy-900 border border-gray-600 rounded-lg focus:border-accent-blue outline-none"
+                />
+                <input
+                  type="password"
+                  placeholder="Confirm New Password"
+                  value={passwords.confirm}
+                  onChange={(e) => setPasswords({...passwords, confirm: e.target.value})}
+                  className="w-full px-4 py-2 bg-navy-900 border border-gray-600 rounded-lg focus:border-accent-blue outline-none"
+                />
+                <div className="flex gap-3 mt-4">
+                  <Button onClick={handlePasswordSave} disabled={loading}>Update Password</Button>
+                  <button onClick={() => setEditPassword(false)} className="px-4 py-2 bg-navy-700 rounded-lg hover:bg-navy-600">Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xl font-medium pl-12">••••••••</p>
+            )}
+          </div>
+
+          {/* 4. Interests Section */}
+          <div className="bg-navy-800 rounded-2xl p-6 border border-gray-700">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-500/10 rounded-lg text-green-400">
+                  <Tag size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Your Interests</h3>
+                  <p className="text-sm text-gray-400">Customize your feed</p>
+                </div>
+              </div>
+              {!editInterests ? (
+                <button onClick={() => setEditInterests(true)} className="text-sm text-gray-400 hover:text-white flex items-center gap-1 bg-navy-700 px-3 py-1.5 rounded-full transition-colors">
+                  Edit <Edit2 size={14} />
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                   <button onClick={handleInterestsSave} className="text-sm bg-accent-blue text-white px-3 py-1.5 rounded-full flex items-center gap-1">
+                    Save <Save size={14} />
+                  </button>
+                  <button onClick={() => setEditInterests(false)} className="text-sm bg-navy-700 text-gray-300 px-3 py-1.5 rounded-full flex items-center gap-1">
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2 pl-12">
+              {editInterests ? (
+                CATEGORIES.map(category => (
+                  <button
+                    key={category}
+                    onClick={() => handleInterestToggle(category)}
+                    className={`px-4 py-2 rounded-lg border transition-all ${
+                      interests.includes(category)
+                        ? 'bg-accent-blue/20 border-accent-blue text-white'
+                        : 'bg-navy-900 border-gray-600 text-gray-400 hover:border-gray-500'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))
+              ) : (
+                user?.interests?.map(interest => (
+                  <span key={interest} className={`px-3 py-1 rounded-full text-sm font-medium ${categoryColors[interest] || 'bg-gray-600'}`}>
+                    {interest}
+                  </span>
+                ))
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Change Password */}
-        <div className="bg-navy-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Lock size={20} className="text-accent-blue" />
-            Change Password
-          </h3>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Current Password</label>
-              <input
-                type="password"
-                value={formData.currentPassword}
-                onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                disabled={loading}
-                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors disabled:opacity-50"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">New Password</label>
-              <input
-                type="password"
-                value={formData.newPassword}
-                onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                disabled={loading}
-                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors disabled:opacity-50"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Confirm New Password</label>
-              <input
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                disabled={loading}
-                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors disabled:opacity-50"
-                placeholder="••••••••"
-              />
-            </div>
+          {/* Logout Button */}
+          <div className="flex justify-end mt-4">
+            <button 
+              onClick={logout}
+              className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition-colors font-medium"
+            >
+              <LogOut size={20} />
+              Logout
+            </button>
           </div>
-          {/* ✅ REMOVED: "Not implemented" text */}
+
         </div>
-
-        {/* Interests */}
-        <div className="bg-navy-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Heart size={20} className="text-accent-blue" />
-            Your Interests
-          </h3>
-
-          <p className="text-gray-400 text-sm mb-4">
-            Select categories you're interested in to personalize your feed
-          </p>
-
-          <div className="grid grid-cols-2 gap-3">
-            {CATEGORIES.map(category => (
-              <button
-                key={category}
-                type="button"
-                onClick={() => handleInterestToggle(category)}
-                disabled={loading}
-                className={`px-4 py-3 rounded-lg border-2 transition-all disabled:opacity-50 ${
-                  formData.interests.includes(category)
-                    ? 'border-accent-blue bg-accent-blue/10 text-white'
-                    : 'border-gray-600 bg-navy-700 text-gray-300 hover:border-gray-500'
-                }`}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Save Button */}
-        <div className="flex gap-4">
-          <Button
-            type="submit"
-            disabled={loading}
-            className="flex-1 flex items-center justify-center gap-2"
-          >
-            <Save size={20} />
-            {loading ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }
