@@ -6,6 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.IndexDirection;
+import org.springframework.data.mongodb.core.index.TextIndexed; // ✅ NEW
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,17 +16,21 @@ import java.util.List;
 public class Article {
     @Id
     private String id;
+    
+    @TextIndexed // ✅ NEW: Add to text search index
     private String title;
+    
     private String originalContent;
     private String sourceUrl;
     
-    // ✅ ADD THIS FIELD
     private String imageUrl; // Article thumbnail/header image
     
     @Indexed
     private String category;
     
+    @TextIndexed // ✅ NEW: Add to text search index
     private String summary;
+    
     private List<Double> embedding;
 
     @Indexed(direction = IndexDirection.DESCENDING)

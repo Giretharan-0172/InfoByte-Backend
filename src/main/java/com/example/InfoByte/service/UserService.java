@@ -54,4 +54,21 @@ public class UserService {
         user.setInterests(interests);
         return userRepository.save(user);
     }
+    
+    // ✅ NEW: Method to update user's name
+    public User updateProfile(String userId, String name) {
+        User user = getUserById(userId);
+        user.setName(name);
+        return userRepository.save(user);
+    }
+
+    // ✅ NEW: Method to change user's password
+    public User changePassword(String userId, String currentPassword, String newPassword) {
+        User user = getUserById(userId);
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Invalid current password");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return userRepository.save(user);
+    }
 }

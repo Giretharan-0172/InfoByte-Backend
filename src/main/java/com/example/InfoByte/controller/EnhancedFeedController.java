@@ -34,8 +34,15 @@ public class EnhancedFeedController {
         try {
             User user = userService.getUserById(userId);
             if (user.getInterests() == null || user.getInterests().isEmpty()) {
-                return ResponseEntity.badRequest()
-                    .body(new FeedResponse("User has no interests selected", null, 0, 0, 0));
+                // Fallback to latest articles if user has no interests
+                Page<Article> articles = feedService.getLatestArticles(PageRequest.of(page, size));
+                return ResponseEntity.ok(new FeedResponse(
+                    "Latest articles retrieved (user has no interests)",
+                    articles.getContent(),
+                    articles.getTotalElements(),
+                    articles.getTotalPages(),
+                    articles.getNumber()
+                ));
             }
 
             Page<Article> articles = feedService.getPersonalizedFeed(
@@ -55,6 +62,45 @@ public class EnhancedFeedController {
                 .body(new FeedResponse(e.getMessage(), null, 0, 0, 0));
         }
     }
+    
+    // ✅ NEW: Get personalized TRENDING feed
+    @GetMapping("/{userId}/trending")
+    public ResponseEntity<FeedResponse> getPersonalizedTrendingFeed(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            User user = userService.getUserById(userId);
+            if (user.getInterests() == null || user.getInterests().isEmpty()) {
+                // Fallback to global trending if user has no interests
+                Page<Article> articles = feedService.getTrendingArticles(PageRequest.of(page, size));
+                return ResponseEntity.ok(new FeedResponse(
+                    "Global trending articles retrieved (user has no interests)",
+                    articles.getContent(),
+                    articles.getTotalElements(),
+                    articles.getTotalPages(),
+                    articles.getNumber()
+                ));
+            }
+
+            Page<Article> articles = feedService.getPersonalizedTrendingFeed(
+                user.getInterests(),
+                PageRequest.of(page, size)
+            );
+
+            return ResponseEntity.ok(new FeedResponse(
+                "Personalized trending feed retrieved successfully",
+                articles.getContent(),
+                articles.getTotalElements(),
+                articles.getTotalPages(),
+                articles.getNumber()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new FeedResponse(e.getMessage(), null, 0, 0, 0));
+        }
+    }
+
 
     /**
      * Get trending articles (sorted by engagement)
@@ -69,6 +115,27 @@ public class EnhancedFeedController {
 
             return ResponseEntity.ok(new FeedResponse(
                 "Trending feed retrieved successfully",
+                articles.getContent(),
+                articles.getTotalElements(),
+                articles.getTotalPages(),
+                articles.getNumber()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new FeedResponse(e.getMessage(), null, 0, 0, 0));
+        }
+    }
+    
+    // ✅ NEW: Search for articles
+    @GetMapping("/search")
+    public ResponseEntity<FeedResponse> searchArticles(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        try {
+            Page<Article> articles = feedService.searchArticles(query, PageRequest.of(page, size));
+            return ResponseEntity.ok(new FeedResponse(
+                "Search results for '" + query + "'",
                 articles.getContent(),
                 articles.getTotalElements(),
                 articles.getTotalPages(),

@@ -23,7 +23,8 @@ export default function HomePage() {
 
   return (
     <>
-      <div>
+      {/* ✅ CHANGED: Added max-w-3xl and mx-auto to center the single column */}
+      <div className="max-w-3xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Your Personalized Feed</h1>
           <p className="text-gray-400">
@@ -35,13 +36,13 @@ export default function HomePage() {
           <LoadingSpinner />
         ) : (
           <>
-            {/* All Cards as Large Cards */}
+            {/* ✅ CHANGED: Reverted to single-column space-y-6 feed */}
             <div className="space-y-6">
               {articles.map((article) => (
                 <ArticleCard 
                   key={article.id} 
                   article={article} 
-                  isHero={true}
+                  isHero={false}
                   showImage={true}
                   onArticleClick={handleArticleClick}
                 />

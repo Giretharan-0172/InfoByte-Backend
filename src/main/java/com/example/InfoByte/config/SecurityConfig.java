@@ -23,11 +23,14 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/test/**").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
+                // ✅ CHANGED: Made auth endpoints more specific
+                .requestMatchers("/api/auth/register").permitAll()
+                .requestMatchers("/api/auth/login").permitAll()
+                // Other /api/auth/** routes (like profile/password) will be authenticated
                 .requestMatchers("/api/feed/**").permitAll()
-                .requestMatchers("/api/interactions/**").permitAll()  // ADD THIS LINE
-                .requestMatchers("/api/notifications/**").permitAll()  // ✅ ADD THIS   
-                .requestMatchers("/api/categories/**").permitAll()  // ✅ ADD THIS
+                .requestMatchers("/api/interactions/**").permitAll()
+                .requestMatchers("/api/notifications/**").permitAll()
+                .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/debug/**").permitAll()
                 .anyRequest().authenticated()
             );

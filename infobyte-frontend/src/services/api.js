@@ -17,6 +17,12 @@ export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   updateInterests: (userId, interests) => 
     api.put(`/auth/${userId}/interests`, { interests }),
+  
+  updateProfile: (userId, name) =>
+    api.put(`/auth/${userId}/profile`, { name }),
+
+  changePassword: (userId, currentPassword, newPassword) =>
+    api.put(`/auth/${userId}/password`, { currentPassword, newPassword }),
 };
 
 // Notification API
@@ -35,6 +41,14 @@ export const notificationAPI = {
 export const feedAPI = {
   getPersonalizedFeed: (userId, page = 0, size = 10) =>
     api.get(`/feed/${userId}?page=${page}&size=${size}`),
+  
+  // ✅ NEW: Get personalized trending feed
+  getPersonalizedTrending: (userId, page = 0, size = 20) =>
+    api.get(`/feed/${userId}/trending?page=${page}&size=${size}`),
+    
+  // ✅ NEW: Search articles
+  search: (query, page = 0, size = 20) =>
+    api.get(`/feed/search?query=${query}&page=${page}&size=${size}`),
   
   getTrending: (page = 0, size = 10) =>
     api.get(`/feed/trending?page=${page}&size=${size}`),
@@ -79,7 +93,7 @@ export const interactionAPI = {
     api.get(`/interactions/${userId}/history`),
 };
 
-// ✅ Category API (NEW)
+// Category API
 export const categoryAPI = {
   getAvailableCategories: () =>
     api.get('/categories'),

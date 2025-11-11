@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.TextCriteria; // ✅ NEW
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -28,6 +29,16 @@ public class EnhancedFeedService {
             pageable.getPageNumber(),
             pageable.getPageSize(),
             Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+        return articleRepository.findByCategoryIn(userInterests, sortedPageable);
+    }
+    
+    // ✅ NEW: Get personalized feed sorted by engagement (for Explore page)
+    public Page<Article> getPersonalizedTrendingFeed(List<String> userInterests, Pageable pageable) {
+        Pageable sortedPageable = PageRequest.of(
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            Sort.by(Sort.Direction.DESC, "stats.engagementScore") // Sort by trending
         );
         return articleRepository.findByCategoryIn(userInterests, sortedPageable);
     }
@@ -88,5 +99,14 @@ public class EnhancedFeedService {
     public Article getArticleById(String articleId) {
         return articleRepository.findById(articleId)
             .orElseThrow(() -> new RuntimeException("Article not found"));
+    }
+    
+    // ✅ NEW: Search articles by text query
+    public Page<Article> searchArticles(String query, Pageable pageable) {
+        TextCriteria criteria = TextCriteria
+            .forDefaultLanguage()
+            .matchingAny(query);
+            
+        return articleRepository.findAllBy(criteria, pageable);
     }
 }

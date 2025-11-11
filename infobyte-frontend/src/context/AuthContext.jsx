@@ -47,6 +47,22 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('infobyte_user', JSON.stringify(updatedUser));
   };
 
+  // ✅ NEW: Function to update profile name
+  const updateProfile = async (name) => {
+    const response = await authAPI.updateProfile(user.userId, name);
+    // Update user state with new name from response
+    const updatedUser = { ...user, name: response.data.name };
+    setUser(updatedUser);
+    localStorage.setItem('infobyte_user', JSON.stringify(updatedUser));
+  };
+
+  // ✅ NEW: Function to change password
+  const changePassword = async (currentPassword, newPassword) => {
+    // This call just returns success/error, no user state to update
+    await authAPI.changePassword(user.userId, currentPassword, newPassword);
+  };
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-navy-900">
@@ -56,7 +72,8 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateInterests }}>
+    // ✅ NEW: Added new functions to provider value
+    <AuthContext.Provider value={{ user, login, register, logout, updateInterests, updateProfile, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

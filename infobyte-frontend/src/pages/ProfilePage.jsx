@@ -6,7 +6,8 @@ import Button from '../components/common/Button';
 const CATEGORIES = ['Technology', 'Business', 'Sports', 'Medicine', 'Science', 'WorldNews'];
 
 export default function ProfilePage() {
-  const { user, updateInterests } = useAuth();
+  // ✅ CHANGED: Get new functions from context
+  const { user, updateInterests, updateProfile, changePassword } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -41,40 +42,63 @@ export default function ProfilePage() {
     }));
   };
 
+  // ✅ CHANGED: Updated profile handler to submit all changes
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-
-    // Validate passwords if changing
-    if (formData.newPassword) {
-      if (!formData.currentPassword) {
-        setError('Current password is required to set a new password');
-        return;
-      }
-      if (formData.newPassword !== formData.confirmPassword) {
-        setError('New passwords do not match');
-        return;
-      }
-      if (formData.newPassword.length < 6) {
-        setError('New password must be at least 6 characters');
-        return;
-      }
-    }
-
-    if (formData.interests.length === 0) {
-      setError('Please select at least one interest');
-      return;
-    }
-
     setLoading(true);
+
     try {
-      // In a real app, you'd have separate API calls for profile update and password change
-      // For now, we'll just update interests
-      await updateInterests(formData.interests);
-      
-      setSuccess('Profile updated successfully!');
-      
+      let successMessages = [];
+
+      // 1. Update Name if changed
+      if (formData.name !== user.name) {
+        await updateProfile(formData.name);
+        successMessages.push('Name updated');
+      }
+
+      // 2. Update Interests if changed
+      const interestsChanged = formData.interests.length !== user.interests.length ||
+        !formData.interests.every(interest => user.interests.includes(interest));
+
+      if (interestsChanged) {
+        if (formData.interests.length === 0) {
+          setError('Please select at least one interest');
+          setLoading(false);
+          return;
+        }
+        await updateInterests(formData.interests);
+        successMessages.push('Interests updated');
+      }
+
+      // 3. Update Password if new password is set
+      if (formData.newPassword) {
+        if (!formData.currentPassword) {
+          setError('Current password is required to set a new password');
+          setLoading(false);
+          return;
+        }
+        if (formData.newPassword !== formData.confirmPassword) {
+          setError('New passwords do not match');
+          setLoading(false);
+          return;
+        }
+        if (formData.newPassword.length < 6) {
+          setError('New password must be at least 6 characters');
+          setLoading(false);
+          return;
+        }
+        await changePassword(formData.currentPassword, formData.newPassword);
+        successMessages.push('Password updated');
+      }
+
+      if (successMessages.length === 0) {
+        setSuccess('No changes to save');
+      } else {
+        setSuccess(successMessages.join(' & ') + ' successfully!');
+      }
+
       // Clear password fields
       setFormData(prev => ({
         ...prev,
@@ -82,12 +106,14 @@ export default function ProfilePage() {
         newPassword: '',
         confirmPassword: ''
       }));
+
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update profile');
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -137,15 +163,17 @@ export default function ProfilePage() {
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                disabled
-                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                // ✅ CHANGED: Enabled input
+                disabled={loading}
+                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors disabled:opacity-50"
                 placeholder="Your name"
               />
-              <p className="text-xs text-gray-500 mt-1">Name cannot be changed</p>
+              {/* ✅ CHANGED: Updated help text */}
+              <p className="text-xs text-gray-500 mt-1">Update your display name</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2 flex items-center gap-2">
+              <label className="text-sm font-medium mb-2 flex items-center gap-2">
                 <Mail size={16} />
                 Email
               </label>
@@ -176,7 +204,8 @@ export default function ProfilePage() {
                 type="password"
                 value={formData.currentPassword}
                 onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors"
+                disabled={loading}
+                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors disabled:opacity-50"
                 placeholder="••••••••"
               />
             </div>
@@ -187,7 +216,8 @@ export default function ProfilePage() {
                 type="password"
                 value={formData.newPassword}
                 onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors"
+                disabled={loading}
+                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors disabled:opacity-50"
                 placeholder="••••••••"
               />
             </div>
@@ -198,14 +228,13 @@ export default function ProfilePage() {
                 type="password"
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors"
+                disabled={loading}
+                className="w-full px-4 py-3 bg-navy-700 border border-gray-600 rounded-lg focus:outline-none focus:border-accent-blue transition-colors disabled:opacity-50"
                 placeholder="••••••••"
               />
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-4">
-            Note: Password change functionality is not yet implemented in the backend
-          </p>
+          {/* ✅ REMOVED: "Not implemented" text */}
         </div>
 
         {/* Interests */}
@@ -225,7 +254,8 @@ export default function ProfilePage() {
                 key={category}
                 type="button"
                 onClick={() => handleInterestToggle(category)}
-                className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                disabled={loading}
+                className={`px-4 py-3 rounded-lg border-2 transition-all disabled:opacity-50 ${
                   formData.interests.includes(category)
                     ? 'border-accent-blue bg-accent-blue/10 text-white'
                     : 'border-gray-600 bg-navy-700 text-gray-300 hover:border-gray-500'

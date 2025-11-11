@@ -29,44 +29,66 @@ export default function ArticleCard({ article, isHero = false, showImage = true,
     if (onArticleClick) onArticleClick(article);
   };
 
+  const hasImage = showImage && article.imageUrl;
+
   return (
     <div 
       onClick={handleCardClick}
-      className={`bg-navy-800 rounded-xl overflow-hidden border border-gray-800 hover:border-accent-blue transition-all cursor-pointer ${
-        isHero ? 'col-span-2' : ''
-      }`}
+      className={`rounded-xl overflow-hidden transition-all cursor-pointer 
+        bg-navy-800/75 backdrop-blur-lg 
+        border border-gray-700/50 hover:border-accent-blue/75
+      `}
     >
-      {/* Hero/Article Image */}
-      {showImage && article.imageUrl && (
-        <div className={`${isHero ? 'h-80' : 'h-48'} overflow-hidden`}>
+      {/* ✅ NEW: Image Section with Overlay */}
+      {hasImage ? (
+        <div className="relative">
           <img 
             src={article.imageUrl} 
             alt={article.title}
-            className="w-full h-full object-cover"
-            onError={(e) => e.target.parentElement.style.display = 'none'}
+            className="w-full h-80 object-cover"
+            onError={(e) => { e.target.style.display = 'none'; }}
           />
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          
+          {/* Content on top of Image */}
+          <div className="absolute bottom-0 left-0 p-6 text-white">
+            <div className="flex items-center gap-2 mb-3">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${categoryColors[article.category] || 'bg-gray-600'}`}>
+                {article.category}
+              </span>
+              <span className="text-xs text-gray-300 flex items-center gap-1">
+                <Clock size={12} />
+                {formatTimeAgo(article.createdAt)}
+              </span>
+            </div>
+            <h3 className="font-bold text-xl text-white">
+              {article.title}
+            </h3>
+          </div>
         </div>
-      )}
+      ) : null}
 
+      {/* ✅ NEW: Content Section (below image) */}
       <div className="p-6">
-        {/* Category & Time */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${categoryColors[article.category] || 'bg-gray-600'}`}>
-            {article.category}
-          </span>
-          <span className="text-xs text-gray-400 flex items-center gap-1">
-            <Clock size={12} />
-            {formatTimeAgo(article.createdAt)}
-          </span>
-        </div>
-
-        {/* Title */}
-        <h3 className={`font-bold mb-3 hover:text-accent-blue transition-colors ${
-          isHero ? 'text-3xl' : 'text-xl'
-        }`}>
-          {article.title}
-        </h3>
-
+        {/* Title (only if no image) */}
+        {!hasImage && (
+          <>
+            <div className="flex items-center gap-2 mb-3">
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${categoryColors[article.category] || 'bg-gray-600'}`}>
+                {article.category}
+              </span>
+              <span className="text-xs text-gray-400 flex items-center gap-1">
+                <Clock size={12} />
+                {formatTimeAgo(article.createdAt)}
+              </span>
+            </div>
+            <h3 className={`font-bold mb-3 hover:text-accent-blue transition-colors text-xl`}>
+              {article.title}
+            </h3>
+          </>
+        )}
+        
         {/* Summary */}
         <p className="text-gray-400 mb-4 line-clamp-2">
           {article.summary}
